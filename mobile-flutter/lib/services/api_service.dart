@@ -4,8 +4,9 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService extends ChangeNotifier {
-  // Use 10.0.2.2 for Android emulator to access host localhost
-  final String baseUrl = 'http://10.0.2.2:8080/api/v1';
+  // Override with --dart-define=API_BASE_URL=http://<LAN-IP>:8080/api/v1 on a real phone.
+  final String baseUrl = const String.fromEnvironment(
+    'API_BASE_URL', defaultValue: 'http://10.0.2.2:8080/api/v1');
   String? _token;
   String? _role;
 
@@ -47,13 +48,19 @@ class ApiService extends ChangeNotifier {
     return false;
   }
 
-  void logout() async {
+  Future<void> logout() async {
     _token = null;
     _role = null;
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('token');
     await prefs.remove('role');
     notifyListeners();
+  }
+
+  Future<void> _handleUnauthorized(http.Response response) async {
+    if (response.statusCode == 401 || response.statusCode == 403) {
+      await logout();
+    }
   }
 
   Future<Map<String, dynamic>?> getDevice(String deviceId) async {
@@ -65,6 +72,7 @@ class ApiService extends ChangeNotifier {
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       }
+      await _handleUnauthorized(response);
     } catch (e) {
       debugPrint(e.toString());
     }
@@ -80,6 +88,7 @@ class ApiService extends ChangeNotifier {
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       }
+      await _handleUnauthorized(response);
     } catch (e) {
       debugPrint(e.toString());
     }
@@ -96,6 +105,7 @@ class ApiService extends ChangeNotifier {
         },
         body: jsonEncode({'action': action}),
       );
+      await _handleUnauthorized(response);
       return response.statusCode == 200;
     } catch (e) {
       debugPrint(e.toString());

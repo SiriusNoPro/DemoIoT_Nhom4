@@ -7,13 +7,12 @@ import { AuthProvider } from './contexts/AuthContext.tsx'
 const theme = createTheme({
   palette: {
     mode: 'light',
-    primary: {
-      main: '#00bcd4', // cyan
-    },
-    secondary: {
-      main: '#2196f3', // blue
-    },
+    primary: { main: '#18715f' },
+    secondary: { main: '#3c91ba' },
+    background: { default: '#f6f8f8' },
   },
+  typography: { fontFamily: 'Inter, Segoe UI, Arial, sans-serif' },
+  shape: { borderRadius: 12 },
 })
 
 ReactDOM.createRoot(document.getElementById('root')!).render(

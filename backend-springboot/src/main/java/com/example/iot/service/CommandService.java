@@ -32,7 +32,6 @@ public class CommandService {
     private final MqttGateway mqttGateway;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    @Transactional
     public Command sendCommand(String deviceId, String action) {
         Device device = deviceRepository.findByDeviceId(deviceId)
                 .orElseThrow(() -> new RuntimeException("Device not found"));
@@ -45,8 +44,9 @@ public class CommandService {
         command.setId(UUID.randomUUID());
         command.setDeviceId(deviceId);
         command.setAction(action);
-        command.setStatus("PENDING");
+        command.setStatus("SENT");
         command.setCreatedAt(ZonedDateTime.now());
+        command.setSentAt(ZonedDateTime.now());
         
         String username = SecurityContextHolder.getContext().getAuthentication() != null 
                 ? SecurityContextHolder.getContext().getAuthentication().getName() : "system";
@@ -60,14 +60,11 @@ public class CommandService {
             String payloadJson = objectMapper.writeValueAsString(payloadMap);
             command.setPayload(payloadJson);
             
+            // Commit before publishing so a fast device ACK can always find the command.
             commandRepository.save(command);
 
             String topic = "device/" + deviceId + "/command";
             mqttGateway.sendToMqtt(topic, 1, payloadJson);
-            
-            command.setStatus("SENT");
-            command.setSentAt(ZonedDateTime.now());
-            commandRepository.save(command);
             
             log.info("Sent command {} to device {}", command.getId(), deviceId);
             return command;
@@ -90,6 +87,11 @@ public class CommandService {
         Optional<Command> cmdOpt = commandRepository.findById(ack.getCommandId());
         if (cmdOpt.isPresent()) {
             Command command = cmdOpt.get();
+            if (!command.getDeviceId().equals(ack.getDeviceId()) ||
+                    !command.getAction().equals(ack.getAction())) {
+                log.warn("Ignored mismatched ACK for command {}", ack.getCommandId());
+                return;
+            }
             command.setStatus("ACKNOWLEDGED");
             command.setAcknowledgedAt(ack.getTimestamp() != null ? ack.getTimestamp() : ZonedDateTime.now());
             commandRepository.save(command);

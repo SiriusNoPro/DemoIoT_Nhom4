@@ -1,0 +1,95 @@
+<!doctype html><html lang="vi"><head><meta charset="utf-8">
+<title>Báo cáo triển khai EcoSense</title><style>
+@page { size: A4; margin: 18mm 18mm 16mm; }
+body { font-family: Arial, 'Segoe UI', sans-serif; color: #193632; font-size: 11pt; line-height: 1.5; }
+h1 { color: #18715f; font-size: 24pt; border-bottom: 3px solid #18715f; padding-bottom: 8px; }
+h2 { color: #18715f; font-size: 15pt; margin-top: 22px; break-after: avoid; }
+p, li { margin: 6px 0; }
+table { border-collapse: collapse; width: 100%; font-size: 9.5pt; margin: 10px 0; }
+th, td { border: 1px solid #cdded9; padding: 7px; text-align: left; vertical-align: top; }
+th { background: #e7f4f1; }
+tr { break-inside: avoid; }
+img { display: block; max-height: 135mm; width: auto; max-width: 100%; margin: 10px auto; break-inside: avoid; }
+code { background: #eef4f2; padding: 1px 3px; }
+</style></head><body><h1>Báo cáo triển khai — EcoSense</h1>
+<p><strong>Bản nháp:</strong> Các mục cần ESP32/DHT22/LED thật và video minh chứng phải được cập nhật sau khi kiểm tra trên phần cứng.</p>
+<h2>1. Mục tiêu và kiến trúc</h2>
+<p>Hệ thống giám sát môi trường gồm ESP32/DHT22/LED hoặc simulator Python, EMQX, Spring Boot, PostgreSQL, web React và Flutter. Thiết bị gửi telemetry và status qua MQTT; backend lưu dữ liệu, cung cấp REST API có JWT cho web và mobile. Lệnh LED đi từ web/mobile qua REST API, backend publish MQTT command, thiết bị thực thi rồi gửi ACK giữ nguyên <code>commandId</code>.</p>
+<h2>2. Phần đã triển khai</h2>
+<ul>
+<li>Firmware ESP32 đọc DHT22 bằng giao thức xung, kiểm tra checksum và giới hạn vật lý; đọc lỗi thì bỏ qua mẫu, không gửi số giả.</li>
+<li>Firmware đồng bộ SNTP, dùng ISO 8601 UTC, publish ONLINE và Last Will OFFLINE retained.</li>
+<li>Firmware phân tích command bằng cJSON, chỉ nhận <code>LED_ON</code>/<code>LED_OFF</code>, điều khiển GPIO2 và ACK đúng <code>commandId</code>.</li>
+<li>Web React được thiết kế lại theo tiếng Việt, responsive, có biểu đồ, lịch sử, trạng thái kết nối, lệnh gần nhất và xử lý lỗi tải dữ liệu.</li>
+<li>Flutter có Android project, dashboard và login mới, hỗ trợ cấu hình API LAN qua <code>--dart-define</code>.</li>
+<li>Chức năng nâng cao: cảnh báo nhiệt độ lớn hơn 35 °C trên web và mobile từ telemetry hiện có. Firmware, MQTT, backend và database đã cung cấp giá trị nhiệt độ; không cần đổi schema hay payload.</li>
+</ul>
+<h2>3. MQTT contract và phần cứng</h2>
+<p>Thiết bị dùng <code>deviceId=esp32-001</code>. Telemetry <code>device/esp32-001/telemetry</code> QoS 0; command và ACK QoS 1; status QoS 1 retained. Trường <code>illuminance</code> và <code>soilMoisture</code> gửi <code>null</code> khi chỉ lắp DHT22. Chi tiết và sơ đồ GPIO nằm trong README.</p>
+<h2>4. Kết quả kiểm tra phần mềm</h2>
+<table>
+<thead>
+<tr>
+<th>Kiểm tra</th>
+<th>Kết quả</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ESP-IDF 5.5.5 <code>idf.py build</code> cho target ESP32</td>
+<td>Đạt, sinh firmware <code>.bin</code></td>
+</tr>
+<tr>
+<td>React <code>npm run build</code></td>
+<td>Đạt</td>
+</tr>
+<tr>
+<td>Flutter <code>flutter analyze</code></td>
+<td>Đạt</td>
+</tr>
+<tr>
+<td>Flutter <code>flutter build apk --debug</code></td>
+<td>Đạt, sinh <code>app-debug.apk</code></td>
+</tr>
+<tr>
+<td>Docker Compose và Flyway</td>
+<td>Đạt, cả 5 container Up; Flyway áp dụng 3 migration</td>
+</tr>
+<tr>
+<td>Simulator → MQTT → backend → API</td>
+<td>Đạt, telemetry lưu mỗi 5 giây</td>
+</tr>
+<tr>
+<td>LED_ON, LED_OFF và ACK</td>
+<td>Đạt trên simulator, command chuyển <code>ACKNOWLEDGED</code>, LED state đúng</td>
+</tr>
+<tr>
+<td>Phân quyền viewer</td>
+<td>Đạt, POST command trả HTTP 403</td>
+</tr>
+<tr>
+<td>Web và đường dẫn lịch sử</td>
+<td>Đạt, HTTP 200 cho <code>/</code> và <code>/logs</code></td>
+</tr>
+<tr>
+<td>Dừng/khởi động lại simulator</td>
+<td>Đạt, trạng thái lần lượt OFFLINE và ONLINE</td>
+</tr>
+<tr>
+<td>Flutter trên Android Emulator</td>
+<td>Đạt, đăng nhập operator và đọc cùng telemetry từ API</td>
+</tr>
+<tr>
+<td>Điều khiển LED từ Flutter</td>
+<td>Đạt trên simulator, LED state đổi ON rồi OFF trong backend</td>
+</tr>
+<tr>
+<td>ESP32, DHT22, LED, rút nguồn và mobile trên máy thật</td>
+<td>Chưa kiểm chứng: chưa có board/cổng COM được kết nối</td>
+</tr>
+</tbody>
+</table>
+<p>Ảnh dưới đây là app mobile nhận <strong>dữ liệu simulator</strong>, dùng để chứng minh phần mềm hoạt động. Khi nộp bài, cần bổ sung ảnh nhận dữ liệu từ ESP32 thật.</p>
+<p><img alt="Flutter đọc dữ liệu simulator" src="mobile-simulator.png" /></p>
+<h2>5. Kế hoạch xác nhận và minh chứng</h2>
+<p>Phần mềm bằng simulator đã kiểm tra xong. Bước tiếp theo cần phần cứng: dừng simulator, cấu hình Wi-Fi và IP broker, flash ESP32, kiểm tra dữ liệu thật trên web/mobile, điều khiển LED hai chiều và rút nguồn để xác nhận OFFLINE. Lưu ảnh màn hình web/mobile, log command ACK và video 5–7 phút theo thứ tự trong tài liệu hướng dẫn. Khi có kết quả phần cứng, cập nhật bảng ở mục 4, điền thông tin nhóm và xuất tài liệu này thành PDF để nộp.</p></body></html>

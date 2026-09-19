@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   postgres:
     image: postgres:16-alpine
@@ -30,11 +28,8 @@ services:
       EMQX_DASHBOARD__DEFAULT_USERNAME: ${EMQX_DASHBOARD_USER:-admin}
       EMQX_DASHBOARD__DEFAULT_PASSWORD: ${EMQX_DASHBOARD_PASSWORD:-public}
     ports:
-      - "1883:1883"
-      - "8083:8083"
-      - "8084:8084"
-      - "8883:8883"
-      - "18083:18083"
+      - "${MQTT_HOST_PORT:-1884}:1883"
+      - "${EMQX_DASHBOARD_PORT:-18084}:18083"
     volumes:
       - emqx_data:/opt/emqx/data
       - ./infrastructure/emqx/acl.conf:/opt/emqx/etc/acl.conf
@@ -66,7 +61,7 @@ services:
       context: ./web-react
     container_name: iot_web
     ports:
-      - "80:80"
+      - "${WEB_HOST_PORT:-3000}:80"
     depends_on:
       - backend
     networks:
