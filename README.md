@@ -10,6 +10,10 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\run-all-real.p
 
 Thêm `-FlashEsp32 -Port COM3` nếu cần build và nạp lại firmware. Dừng Docker và Android Emulator bằng `powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\stop-all.ps1`.
 
+## Deploy web lên Vercel
+
+Dashboard React đã có cấu hình Vercel trong `web-react/vercel.json`. Khi import repository vào Vercel, chọn **Root Directory** là `web-react` và đặt `VITE_API_URL` thành URL HTTPS công khai của backend. Xem [hướng dẫn deploy Vercel](docs/vercel-deployment.md).
+
 Dự án triển khai từ [mã mẫu chương 5](https://github.com/nguyentrungkiet/demo_chuong_5_lt) theo tài liệu hướng dẫn của học phần. Hệ thống có simulator Python, firmware ESP32, EMQX, Spring Boot, PostgreSQL, web React và app Flutter. Cả simulator và ESP32 dùng `deviceId=esp32-001` và cùng một hợp đồng MQTT.
 
 ## Kiến trúc
