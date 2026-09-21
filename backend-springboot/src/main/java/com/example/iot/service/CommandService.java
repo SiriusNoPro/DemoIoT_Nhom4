@@ -36,7 +36,8 @@ public class CommandService {
         Device device = deviceRepository.findByDeviceId(deviceId)
                 .orElseThrow(() -> new RuntimeException("Device not found"));
 
-        if (!"LED_ON".equals(action) && !"LED_OFF".equals(action)) {
+        if (!"LED_ON".equals(action) && !"LED_OFF".equals(action)
+                && !"BUZZER_ON".equals(action) && !"BUZZER_OFF".equals(action)) {
             throw new IllegalArgumentException("Invalid action");
         }
 
@@ -96,10 +97,11 @@ public class CommandService {
             command.setAcknowledgedAt(ack.getTimestamp() != null ? ack.getTimestamp() : ZonedDateTime.now());
             commandRepository.save(command);
             
-            // update device led state if applicable
-            if (ack.getLed() != null) {
+            // Update actuator states reported by the device.
+            if (ack.getLed() != null || ack.getBuzzer() != null) {
                 deviceRepository.findByDeviceId(ack.getDeviceId()).ifPresent(device -> {
-                    device.setLedState(ack.getLed());
+                    if (ack.getLed() != null) device.setLedState(ack.getLed());
+                    if (ack.getBuzzer() != null) device.setBuzzerState(ack.getBuzzer());
                     device.setUpdatedAt(ZonedDateTime.now());
                     deviceRepository.save(device);
                 });

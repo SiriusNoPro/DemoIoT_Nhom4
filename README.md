@@ -90,6 +90,8 @@ flowchart LR
 
 Với **module DHT22 3 chân**, cắm theo chữ in trên module, không đoán theo vị trí trái/phải vì mỗi hãng có thể sắp chân khác nhau: `VCC/+` → `3V3`, `DATA/OUT/S` → `GPIO15`, `GND/-` → `GND`. Module 3 chân thường đã có điện trở kéo lên trên mạch; nếu đọc lỗi liên tục mới bổ sung điện trở 4.7–10 kΩ giữa DATA và 3V3. GPIO2 → điện trở 220–330 Ω → chân dài LED (anode/+); chân ngắn LED (cathode/-, cạnh bẹt của vỏ LED) → GND. Không cắm LED thiếu điện trở và không cấp 5 V cho module chưa xác nhận hỗ trợ.
 
+Cảm biến độ ẩm đất: `VCC` → `3V3`, `GND` → `GND`, `AO` → `GPIO4`; chân `DO` có thể để trống. Cảm biến ánh sáng loại 3 chân: `VCC` → `3V3`, `GND` → `GND`, `DO` → `GPIO5`. Firmware quy đổi ánh sáng thành `80` khi tối và `255` khi sáng. Độ ẩm đất dùng mốc mặc định raw khô `3000`, raw ướt `1200`; có thể sửa `SOIL_DRY_RAW` và `SOIL_WET_RAW` sau khi đo thực tế để tăng độ chính xác.
+
 ### Hợp đồng MQTT
 
 | Luồng | Topic | QoS | Retain |
@@ -99,7 +101,20 @@ Với **module DHT22 3 chân**, cắm theo chữ in trên module, không đoán 
 | ACK | `device/esp32-001/command/ack` | 1 | Không |
 | Status | `device/esp32-001/status` | 1 | Có |
 
-Firmware parse command bằng cJSON, chỉ nhận `LED_ON` hoặc `LED_OFF`, giữ nguyên `commandId` trong ACK. ONLINE được publish sau khi kết nối; OFFLINE là Last Will retained. Timestamp Last Will được tạo lúc mở kết nối vì MQTT broker giữ sẵn payload để phát khi mất kết nối đột ngột. Xem [hợp đồng chi tiết](docs/mqtt-contract.md).
+Firmware parse command bằng cJSON, nhận `LED_ON`, `LED_OFF`, `BUZZER_ON` và `BUZZER_OFF`, giữ nguyên `commandId` trong ACK. ONLINE được publish sau khi kết nối; OFFLINE là Last Will retained. Timestamp Last Will được tạo lúc mở kết nối vì MQTT broker giữ sẵn payload để phát khi mất kết nối đột ngột. Xem [hợp đồng chi tiết](docs/mqtt-contract.md).
+
+### Còi chủ động TMB12A03 qua transistor NPN
+
+Firmware dùng `GPIO7`, mức HIGH để bật còi. Dùng transistor NPN như S8050, 2N2222 hoặc BC547 và kiểm tra đúng thứ tự chân của transistor đang có:
+
+```text
+ESP32 3V3 ─────────────── còi (+)
+còi (-) ──────────────── Collector transistor
+GPIO7 ── điện trở 1 kΩ ─ Base transistor
+GND ──────────────────── Emitter transistor
+```
+
+Nối thêm điện trở 10 kΩ từ Base xuống GND để còi giữ trạng thái tắt lúc khởi động. Vì TMB12A03 là còi điện từ, đặt diode dập xung song song với còi: cathode/vạch trắng về `3V3`, anode về Collector/cực âm còi. Tất cả GND phải nối chung. Không nối còi trực tiếp vào GPIO vì dòng làm việc khoảng 30 mA.
 
 ## Flutter Mobile
 

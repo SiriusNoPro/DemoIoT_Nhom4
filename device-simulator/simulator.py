@@ -13,6 +13,7 @@ class Device:
     def __init__(self, device_id):
         self.device_id = device_id
         self.led_state = False
+        self.buzzer_state = False
         self.client = mqtt.Client(client_id=f"simulator-{self.device_id}")
         
         # Last Will and Testament
@@ -71,6 +72,13 @@ class Device:
                 self.led_state = True
             elif action == "LED_OFF":
                 self.led_state = False
+            elif action == "BUZZER_ON":
+                self.buzzer_state = True
+            elif action == "BUZZER_OFF":
+                self.buzzer_state = False
+            else:
+                print(f"[{self.device_id}] Ignored unknown action: {action}")
+                return
                 
             # Publish ACK
             ack_topic = f"device/{self.device_id}/command/ack"
@@ -80,6 +88,7 @@ class Device:
                 "action": action,
                 "status": "ACKNOWLEDGED",
                 "led": self.led_state,
+                "buzzer": self.buzzer_state,
                 "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat()
             })
             self.client.publish(ack_topic, ack_payload, qos=1)

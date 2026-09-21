@@ -26,6 +26,9 @@ public class Device {
     @Column(name = "led_state")
     private boolean ledState;
 
+    @Column(name = "buzzer_state")
+    private boolean buzzerState;
+
     @Column(name = "last_seen_at")
     private ZonedDateTime lastSeenAt;
 

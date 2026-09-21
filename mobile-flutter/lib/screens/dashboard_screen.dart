@@ -42,15 +42,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
     });
   }
 
-  Future<void> _toggleLed() async {
+  Future<void> _toggleActuator(String action, String label) async {
     if (_device == null || _sending || _device!['status'] != 'ONLINE') return;
     setState(() => _sending = true);
-    final action = _device!['ledState'] == true ? 'LED_OFF' : 'LED_ON';
     final sent = await context.read<ApiService>().sendCommand('esp32-001', action);
     if (mounted) {
       setState(() {
         _sending = false;
-        if (!sent) _error = 'Gửi lệnh LED thất bại.';
+        if (!sent) _error = 'Gửi lệnh $label thất bại.';
       });
       if (sent) await _fetchData();
     }
@@ -110,15 +109,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 const SizedBox(height: 16),
                 Row(children: [_metric('Nhiệt độ', temperature, '°C', Icons.thermostat, const Color(0xFFDE6F4C)), const SizedBox(width: 10), _metric('Độ ẩm', _telemetry?['humidity'], '%', Icons.water_drop, const Color(0xFF3C91BA))]),
                 const SizedBox(height: 10),
-                Row(children: [_metric('Ánh sáng', _telemetry?['illuminance'], 'lux', Icons.wb_sunny_outlined, const Color(0xFFD9A442)), const SizedBox(width: 10), _metric('Độ ẩm đất', _telemetry?['soilMoisture'], '%', Icons.grass, const Color(0xFF5B9E75))]),
+                Row(children: [_metric('Ánh sáng', _telemetry?['illuminance'], 'mức', Icons.wb_sunny_outlined, const Color(0xFFD9A442)), const SizedBox(width: 10), _metric('Độ ẩm đất', _telemetry?['soilMoisture'], '%', Icons.grass, const Color(0xFF5B9E75))]),
                 const SizedBox(height: 16),
                 Card(elevation: 0, color: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)), child: Padding(
                   padding: const EdgeInsets.all(20), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    const Text('Điều khiển LED', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                    const Text('Điều khiển thiết bị', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
                     const SizedBox(height: 4),
                     Text(api.role == 'VIEWER' ? 'Tài khoản viewer chỉ có quyền xem.' : online ? 'Thiết bị sẽ phản hồi bằng ACK.' : 'Thiết bị đang ngoại tuyến.', style: const TextStyle(color: Color(0xFF6A7875))),
                     const SizedBox(height: 10),
-                    SwitchListTile(contentPadding: EdgeInsets.zero, title: Text(_device?['ledState'] == true ? 'LED đang bật' : 'LED đang tắt'), value: _device?['ledState'] == true, onChanged: api.role == 'VIEWER' || !online || _sending ? null : (_) => _toggleLed()),
+                    SwitchListTile(contentPadding: EdgeInsets.zero, secondary: const Icon(Icons.lightbulb_outline), title: Text(_device?['ledState'] == true ? 'LED đang bật' : 'LED đang tắt'), value: _device?['ledState'] == true, onChanged: api.role == 'VIEWER' || !online || _sending ? null : (_) => _toggleActuator(_device?['ledState'] == true ? 'LED_OFF' : 'LED_ON', 'LED')),
+                    const Divider(),
+                    SwitchListTile(contentPadding: EdgeInsets.zero, secondary: const Icon(Icons.volume_up_outlined), title: Text(_device?['buzzerState'] == true ? 'Còi đang kêu' : 'Còi đang tắt'), value: _device?['buzzerState'] == true, onChanged: api.role == 'VIEWER' || !online || _sending ? null : (_) => _toggleActuator(_device?['buzzerState'] == true ? 'BUZZER_OFF' : 'BUZZER_ON', 'còi')),
                   ]),
                 )),
                 const SizedBox(height: 12),

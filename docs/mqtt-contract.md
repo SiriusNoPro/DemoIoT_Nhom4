@@ -33,7 +33,7 @@ Tất cả thiết bị (bao gồm Device Simulator và ESP32 thật) phải tu�
   "timestamp": "2026-09-13T08:31:00Z"
 }
 ```
-*Ghi chú:* `action` có thể là `LED_ON` hoặc `LED_OFF`.
+*Ghi chú:* `action` có thể là `LED_ON`, `LED_OFF`, `BUZZER_ON` hoặc `BUZZER_OFF`.
 
 ## 3. Command Acknowledgement (Thiết bị phản hồi lại lệnh)
 - **Topic:** `device/{deviceId}/command/ack`

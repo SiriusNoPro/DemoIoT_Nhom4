@@ -11,5 +11,6 @@ public class CommandAckPayload {
     private String action;
     private String status;
     private Boolean led;
+    private Boolean buzzer;
     private ZonedDateTime timestamp;
 }
