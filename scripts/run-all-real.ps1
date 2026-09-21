@@ -31,7 +31,7 @@ try {
         Write-Host "Building and flashing ESP32-S3 on $Port..."
         Push-Location $firmware
         try {
-            & 'C:\Windows\system32\cmd.exe' /c "call C:\esp\v5.5.5\esp-idf\export.bat && idf.py -p $Port build flash"
+            & 'C:\Windows\system32\cmd.exe' /d /c "set IDF_TOOLS_PATH=C:\Users\ASUS\.espressif&& call C:\esp\v5.5.5\esp-idf\export.bat && idf.py -p $Port build flash"
             if ($LASTEXITCODE -ne 0) { throw 'ESP32 build or flash failed.' }
         } finally {
             Pop-Location
