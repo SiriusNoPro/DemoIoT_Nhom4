@@ -11,5 +11,6 @@ public class TelemetryPayload {
     private Double illuminance;
     private Double soilMoisture;
     private Boolean led;
+    private Boolean buzzer;
     private ZonedDateTime timestamp;
 }

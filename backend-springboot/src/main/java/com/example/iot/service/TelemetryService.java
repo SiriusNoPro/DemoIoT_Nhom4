@@ -35,6 +35,9 @@ public class TelemetryService {
             if (payload.getLed() != null) {
                 device.setLedState(payload.getLed());
             }
+            if (payload.getBuzzer() != null) {
+                device.setBuzzerState(payload.getBuzzer());
+            }
             if ("OFFLINE".equals(device.getStatus())) {
                 device.setStatus("ONLINE");
             }
